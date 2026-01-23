@@ -1,13 +1,588 @@
 <!DOCTYPE html>
-   <html lang="en">
-   <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>GearMinds Attendance System</title>
-     <script src="https://cdn.tailwindcss.com"></script>
-   </head>
-   <body>
-     <div id="root"></div>
-     <script type="module" src="./app.jsx"></script>
-   </body>
-   </html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GearMinds Student Attendance System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Mock data storage
+    const initialData = {
+      users: [
+        { id: 1, email: 'admin@gearminds.com', password: 'admin123', role: 'Admin' }
+      ],
+      students: [
+        { id: 1, studentId: 'GM001', fullName: 'Alex Johnson', email: 'alex@example.com', phone: '555-0101', status: 'Active' },
+        { id: 2, studentId: 'GM002', fullName: 'Sarah Williams', email: 'sarah@example.com', phone: '555-0102', status: 'Active' },
+        { id: 3, studentId: 'GM003', fullName: 'Michael Chen', email: 'michael@example.com', phone: '555-0103', status: 'Active' },
+        { id: 4, studentId: 'GM004', fullName: 'Emma Davis', email: 'emma@example.com', phone: '555-0104', status: 'Active' }
+      ],
+      classes: [
+        { id: 1, name: 'Elementary Robotics', description: 'Block coding and robots', startDate: '2026-01-15', endDate: '2026-05-30', status: 'Active', maxCapacity: 12 },
+        { id: 2, name: 'Middle School Python', description: 'Introduction to Python', startDate: '2026-01-15', endDate: '2026-05-30', status: 'Active', maxCapacity: 10 }
+      ],
+      enrollments: [
+        { id: 1, studentId: 1, classId: 1 },
+        { id: 2, studentId: 2, classId: 1 },
+        { id: 3, studentId: 3, classId: 1 },
+        { id: 4, studentId: 4, classId: 2 }
+      ],
+      attendance: []
+    };
+
+    // Lucide React icons as SVG components
+    const Calendar = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    );
+
+    const Users = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    );
+
+    const BookOpen = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      </svg>
+    );
+
+    const BarChart3 = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+    );
+
+    const LogOut = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+    );
+
+    const Search = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+    );
+
+    const Plus = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    );
+
+    const Edit2 = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+      </svg>
+    );
+
+    const CheckCircle = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    );
+
+    const Upload = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    );
+
+    const Mail = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    );
+
+    const Sparkles = ({ className }) => (
+      <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M12 3l1.545 4.635L18.18 9.18l-4.635 1.545L12 15.36l-1.545-4.635L5.82 9.18l4.635-1.545L12 3z"/>
+        <path d="M6 21l.75-2.25L9 18l-2.25-.75L6 15l-.75 2.25L3 18l2.25.75L6 21z"/>
+        <path d="M18 6l.75-2.25L21 3l-2.25-.75L18 0l-.75 2.25L15 3l2.25.75L18 6z"/>
+      </svg>
+    );
+
+    function GearMindsAttendance() {
+      const [currentUser, setCurrentUser] = useState(null);
+      const [activeTab, setActiveTab] = useState('dashboard');
+      const [data, setData] = useState(initialData);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [selectedClass, setSelectedClass] = useState(null);
+      const [showStudentModal, setShowStudentModal] = useState(false);
+      const [showClassModal, setShowClassModal] = useState(false);
+      const [editingStudent, setEditingStudent] = useState(null);
+      const [editingClass, setEditingClass] = useState(null);
+
+      const handleLogin = (email, password) => {
+        const user = initialData.users.find(u => u.email === email && u.password === password);
+        if (user) {
+          setCurrentUser(user);
+          return true;
+        }
+        return false;
+      };
+
+      const handleLogout = () => {
+        setCurrentUser(null);
+        setActiveTab('dashboard');
+      };
+
+      const getClassDates = (classItem) => {
+        if (!classItem) return [];
+        const dates = [];
+        const start = new Date(classItem.startDate);
+        const end = new Date(classItem.endDate);
+        const current = new Date(start);
+        
+        while (current <= end) {
+          dates.push(current.toISOString().split('T')[0]);
+          current.setDate(current.getDate() + 7);
+        }
+        
+        return dates.slice(0, 18);
+      };
+
+      const getMakeupSuggestions = () => {
+        const suggestions = [];
+        
+        data.classes.forEach(classItem => {
+          const enrolledStudents = data.enrollments
+            .filter(e => e.classId === classItem.id)
+            .map(e => data.students.find(s => s.id === e.studentId))
+            .filter(s => s);
+          
+          const dates = getClassDates(classItem);
+          
+          enrolledStudents.forEach(student => {
+            const attendanceRecords = data.attendance.filter(a => 
+              a.studentId === student.id && 
+              a.classId === classItem.id
+            );
+            
+            const absentDates = attendanceRecords
+              .filter(a => a.status === 'A')
+              .map(a => a.date);
+            
+            if (absentDates.length > 0) {
+              suggestions.push({
+                student,
+                class: classItem,
+                absentDates,
+                totalAbsences: absentDates.length
+              });
+            }
+          });
+        });
+        
+        return suggestions.sort((a, b) => b.totalAbsences - a.totalAbsences);
+      };
+
+      if (!currentUser) {
+        return <LoginForm onLogin={handleLogin} />;
+      }
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50">
+          <Header user={currentUser} onLogout={handleLogout} />
+          
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+            
+            {activeTab === 'dashboard' && <Dashboard data={data} setActiveTab={setActiveTab} setShowStudentModal={setShowStudentModal} setShowClassModal={setShowClassModal} setEditingStudent={setEditingStudent} setEditingClass={setEditingClass} />}
+            {activeTab === 'students' && <StudentsTab data={data} setData={setData} searchTerm={searchTerm} setSearchTerm={setSearchTerm} setShowStudentModal={setShowStudentModal} setEditingStudent={setEditingStudent} />}
+            {activeTab === 'classes' && <ClassesTab data={data} setData={setData} setShowClassModal={setShowClassModal} setEditingClass={setEditingClass} />}
+            {activeTab === 'attendance' && <AttendanceTab data={data} setData={setData} selectedClass={selectedClass} setSelectedClass={setSelectedClass} getClassDates={getClassDates} />}
+            {activeTab === 'makeup' && <MakeupClassesTab data={data} getMakeupSuggestions={getMakeupSuggestions} />}
+            {activeTab === 'reports' && <ReportsTab data={data} />}
+          </div>
+
+          {showStudentModal && (
+            <StudentModal
+              student={editingStudent}
+              onClose={() => { setShowStudentModal(false); setEditingStudent(null); }}
+              onSave={(student) => {
+                setData(prev => {
+                  if (editingStudent) {
+                    return { ...prev, students: prev.students.map(s => s.id === editingStudent.id ? { ...student, id: editingStudent.id } : s) };
+                  } else {
+                    return { ...prev, students: [...prev.students, { ...student, id: Date.now() }] };
+                  }
+                });
+                setShowStudentModal(false);
+                setEditingStudent(null);
+              }}
+            />
+          )}
+          
+          {showClassModal && (
+            <ClassModal
+              classData={editingClass}
+              onClose={() => { setShowClassModal(false); setEditingClass(null); }}
+              onSave={(classData) => {
+                setData(prev => {
+                  if (editingClass) {
+                    return { ...prev, classes: prev.classes.map(c => c.id === editingClass.id ? { ...classData, id: editingClass.id } : c) };
+                  } else {
+                    return { ...prev, classes: [...prev.classes, { ...classData, id: Date.now() }] };
+                  }
+                });
+                setShowClassModal(false);
+                setEditingClass(null);
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+    function LoginForm({ onLogin }) {
+      const quickLogin = () => {
+        onLogin('admin@gearminds.com', 'admin123');
+      };
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-orange-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
+            <div className="text-center mb-8">
+              <div className="bg-gradient-to-r from-orange-500 to-blue-600 text-white text-3xl font-bold py-3 px-6 rounded-lg inline-block mb-4">
+                GearMinds
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800">Student Attendance System</h2>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <input
+                  type="email"
+                  value="admin@gearminds.com"
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                  type="password"
+                  value="admin123"
+                  readOnly
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+                />
+              </div>
+              
+              <button 
+                type="button"
+                onClick={quickLogin} 
+                className="w-full bg-gradient-to-r from-orange-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-blue-700 transition-all"
+              >
+                Sign In
+              </button>
+            </div>
+            
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">Click Sign In to access the system</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Header({ user, onLogout }) {
+      return (
+        <header className="bg-white shadow-md">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-gradient-to-r from-orange-500 to-blue-600 text-white text-xl font-bold py-2 px-4 rounded-lg">
+                GearMinds
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">Attendance System</h1>
+                <p className="text-sm text-gray-600">Welcome, {user.email}</p>
+              </div>
+            </div>
+            
+            <button onClick={onLogout} className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+              <LogOut className="w-4 h-4" />
+              Logout
+            </button>
+          </div>
+        </header>
+      );
+    }
+
+    function Navigation({ activeTab, setActiveTab }) {
+      const tabs = [
+        { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+        { id: 'students', label: 'Students', icon: Users },
+        { id: 'classes', label: 'Classes', icon: BookOpen },
+        { id: 'attendance', label: 'Attendance', icon: Calendar },
+        { id: 'makeup', label: 'AI Makeup Classes', icon: Sparkles },
+        { id: 'reports', label: 'Reports', icon: BarChart3 }
+      ];
+
+      return (
+        <div className="bg-white rounded-xl shadow-md p-2 mb-6">
+          <nav className="flex gap-2 overflow-x-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-gradient-to-r from-orange-500 to-blue-600 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      );
+    }
+
+    function Dashboard({ data, setActiveTab, setShowStudentModal, setShowClassModal }) {
+      const today = new Date().toISOString().split('T')[0];
+      const activeStudents = data.students.filter(s => s.status === 'Active').length;
+      const activeClasses = data.classes.filter(c => c.status === 'Active').length;
+      const todayAttendance = data.attendance.filter(a => a.date === today);
+      const presentToday = todayAttendance.filter(a => a.status === 'P').length;
+
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-800">Dashboard</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm">Active Students</p>
+                  <p className="text-3xl font-bold mt-1">{activeStudents}</p>
+                </div>
+                <Users className="w-12 h-12 text-orange-200" />
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm">Active Classes</p>
+                  <p className="text-3xl font-bold mt-1">{activeClasses}</p>
+                </div>
+                <BookOpen className="w-12 h-12 text-blue-200" />
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm">Present Today</p>
+                  <p className="text-3xl font-bold mt-1">{presentToday}</p>
+                </div>
+                <CheckCircle className="w-12 h-12 text-green-200" />
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm">Total Records</p>
+                  <p className="text-3xl font-bold mt-1">{data.attendance.length}</p>
+                </div>
+                <BarChart3 className="w-12 h-12 text-purple-200" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <button onClick={() => setActiveTab('attendance')} className="flex items-center justify-center gap-2 bg-orange-50 text-orange-600 py-3 px-4 rounded-lg hover:bg-orange-100">
+                <Calendar className="w-5 h-5" />
+                <span className="font-medium">Take Attendance</span>
+              </button>
+              <button onClick={() => setShowStudentModal(true)} className="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-3 px-4 rounded-lg hover:bg-blue-100">
+                <Plus className="w-5 h-5" />
+                <span className="font-medium">Add Student</span>
+              </button>
+              <button onClick={() => setShowClassModal(true)} className="flex items-center justify-center gap-2 bg-green-50 text-green-600 py-3 px-4 rounded-lg hover:bg-green-100">
+                <Plus className="w-5 h-5" />
+                <span className="font-medium">Create Class</span>
+              </button>
+              <button onClick={() => setActiveTab('reports')} className="flex items-center justify-center gap-2 bg-purple-50 text-purple-600 py-3 px-4 rounded-lg hover:bg-purple-100">
+                <BarChart3 className="w-5 h-5" />
+                <span className="font-medium">View Reports</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function AttendanceTab({ data, setData, selectedClass, setSelectedClass, getClassDates }) {
+      const [makeupDates, setMakeupDates] = useState([]);
+      const [showMakeupModal, setShowMakeupModal] = useState(false);
+      const [newMakeupDate, setNewMakeupDate] = useState('');
+      
+      const activeClasses = data.classes.filter(c => c.status === 'Active');
+      const enrolledStudents = selectedClass 
+        ? data.enrollments
+            .filter(e => e.classId === selectedClass.id)
+            .map(e => data.students.find(s => s.id === e.studentId))
+            .filter(s => s && s.status === 'Active')
+        : [];
+      
+      const dates = selectedClass ? getClassDates(selectedClass) : [];
+      const allDates = [...dates, ...makeupDates].sort();
+
+      const getAttendanceStatus = (studentId, date) => {
+        const record = data.attendance.find(a => 
+          a.studentId === studentId && 
+          a.classId === selectedClass.id && 
+          a.date === date
+        );
+        return record?.status || '';
+      };
+
+      const handleStatusClick = (studentId, date, currentStatus) => {
+        const statuses = ['', 'P', 'A', 'L', 'E'];
+        const currentIndex = statuses.indexOf(currentStatus);
+        const nextStatus = statuses[(currentIndex + 1) % statuses.length];
+        
+        setData(prev => {
+          const existingIndex = prev.attendance.findIndex(a => 
+            a.studentId === studentId && 
+            a.classId === selectedClass.id && 
+            a.date === date
+          );
+
+          if (nextStatus === '') {
+            return {
+              ...prev,
+              attendance: prev.attendance.filter((_, i) => i !== existingIndex)
+            };
+          } else if (existingIndex >= 0) {
+            const newAttendance = [...prev.attendance];
+            newAttendance[existingIndex] = { ...newAttendance[existingIndex], status: nextStatus };
+            return { ...prev, attendance: newAttendance };
+          } else {
+            return {
+              ...prev,
+              attendance: [...prev.attendance, {
+                id: Date.now() + Math.random(),
+                studentId,
+                classId: selectedClass.id,
+                date,
+                status: nextStatus,
+                notes: ''
+              }]
+            };
+          }
+        });
+      };
+
+      const getStatusColor = (status) => {
+        switch (status) {
+          case 'P': return 'bg-green-100 text-green-800 border-green-300';
+          case 'A': return 'bg-red-100 text-red-800 border-red-300';
+          case 'L': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+          case 'E': return 'bg-blue-100 text-blue-800 border-blue-300';
+          default: return 'bg-white text-gray-400 border-gray-200 hover:bg-gray-50';
+        }
+      };
+
+      const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        return `${date.getMonth() + 1}/${date.getDate()}`;
+      };
+
+      const isMakeupDate = (dateStr) => makeupDates.includes(dateStr);
+
+      const addMakeupDate = () => {
+        if (newMakeupDate && !allDates.includes(newMakeupDate)) {
+          setMakeupDates([...makeupDates, newMakeupDate].sort());
+          setNewMakeupDate('');
+          setShowMakeupModal(false);
+        }
+      };
+
+      const removeMakeupDate = (dateStr) => {
+        setMakeupDates(makeupDates.filter(d => d !== dateStr));
+      };
+
+      return (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-gray-800">Attendance Sheet</h2>
+            <div className="flex gap-3 items-center">
+              {selectedClass && (
+                <button
+                  onClick={() => setShowMakeupModal(true)}
+                  className="flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Makeup Date
+                </button>
+              )}
+              <div className="w-64">
+                <select
+                  value={selectedClass?.id || ''}
+                  onChange={(e) => setSelectedClass(activeClasses.find(c => c.id === parseInt(e.target.value)))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="">Select a class...</option>
+                  {activeClasses.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {selectedClass ? (
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="p-4 bg-gradient-to-r from-orange-500 to-blue-600 text-white">
+                <h3 className="text-lg font-bold">{selectedClass.name}</h3>
+                <p className="text-sm text-orange-100">Click cells to cycle: Empty → P (Present) → A (Absent) → L (Late) → E (Excused)</p>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b-2 border-gray-300">
+                      <th className="sticky left-0 bg-gray-50 z-10 px-4 py-3 text-left text-sm font-bold text-gray-700 border-r-2 border-gray-300 min-w-[200px]">
+                        Student Name
+                      </th>
+                      {allDates.map(date => (
+                        <th key={date} className={`px-3 py-3 text-center text-xs font-sem
